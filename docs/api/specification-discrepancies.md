@@ -4,7 +4,7 @@ The read-only handoff files were not changed. The Coding Handoff Guide precedenc
 
 ## `GET /v1/me` response schema is absent from OpenAPI
 
-The API prose says `GET /v1/me` returns “Profile + memberships,” but `04a_TurnTable_OpenAPI_3.1.yaml` has a 200 response with no content/schema. Phase 0 defines the smallest explicit `MeResponse` compatible with that prose: `{ user, memberships }`, using the baseline `User` fields and membership identifiers/role/status. This appears only in the generated implemented contract. The normative baseline should be corrected before broader client work treats this shape as frozen.
+The API prose says `GET /v1/me` returns “Profile + memberships,” but `04a_TurnTable_OpenAPI_3.1.yaml` has a 200 response with no content/schema. Phase 0 defines the smallest explicit `MeResponse` compatible with that prose: `{ user, memberships }`, using the baseline `User` fields and membership identifiers/role/status. The project-owned `phase0-contract-addendum.yaml` freezes that clarification without changing the read-only handoff package, and the OpenAPI compatibility check now verifies both the response reference and its component schemas.
 
 ## Overdue persistence
 

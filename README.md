@@ -97,7 +97,7 @@ pnpm openapi:generate
 pnpm openapi:check
 ```
 
-The first command writes `docs/api/openapi.generated.json` from implemented NestJS controllers and regenerates `packages/api-client/src/generated/schema.d.ts`. The second fails when generation leaves an uncommitted contract/client diff. The broader normative baseline remains `TurnTable_Coding_Handoff_Package/04a_TurnTable_OpenAPI_3.1.yaml`; Phase 0 generates only implemented operations.
+The first command writes `docs/api/openapi.generated.json` from implemented NestJS controllers and regenerates `packages/api-client/src/generated/schema.d.ts`. The second fails when generation leaves an uncommitted contract/client diff. The broader normative baseline remains `TurnTable_Coding_Handoff_Package/04a_TurnTable_OpenAPI_3.1.yaml`; Phase 0 generates only implemented operations. The project-owned `docs/api/phase0-contract-addendum.yaml` freezes the otherwise unspecified `GET /me` response and is enforced by the compatibility check.
 
 ## Repository layout
 
@@ -140,4 +140,4 @@ Both images use Node.js 24, multi-stage builds, explicit commands, and a non-roo
 - Prisma client import/build errors: run `pnpm db:generate`.
 - Stale generated contract: run `pnpm openapi:generate` and commit both generated artifacts.
 
-Known specification mismatches and the selected Phase 0 interpretations are recorded in `docs/api/specification-discrepancies.md`.
+Known specification mismatches and the selected Phase 0 interpretations are recorded in `docs/api/specification-discrepancies.md`. The completed local, integration, runtime, and image checks are recorded in `docs/runbooks/phase-0-verification.md`.

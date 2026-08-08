@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: TurnTable Phase 0 contract addendum
+  version: 0.0.0
+  description: >-
+    Project-owned clarification for the GET /me response that is described as
+    Profile + memberships in the read-only handoff package but has no response
+    schema in its normative OpenAPI document.
+paths:
+  /me:
+    get:
+      operationId: getMe
+      responses:
+        '200':
+          description: Authenticated profile and household memberships
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponseDto'
+components:
+  schemas:
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+          example: Alex Rivera
+        email:
+          type: string
+          format: email
+          nullable: true
+      required:
+        - id
+        - display_name
+    MembershipSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - OWNER
+            - MEMBER
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - LEFT
+            - REMOVED
+      required:
+        - id
+        - household_id
+        - role
+        - status
+    MeResponseDto:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserDto'
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembershipSummaryDto'
+      required:
+        - user
+        - memberships

@@ -22,7 +22,7 @@ describe('worker Redis integration', () => {
       REDIS_URL: `redis://${container.getHost()}:${container.getMappedPort(6379)}`,
       WORKER_PROBE_ON_START: 'true',
     });
-    const { WorkerModule } = await import('../src/worker.module');
+    const { WorkerModule } = await import('../src/worker.module.js');
     const app = await NestFactory.createApplicationContext(WorkerModule, {
       abortOnError: false,
       logger: ['error'],

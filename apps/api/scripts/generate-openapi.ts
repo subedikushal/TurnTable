@@ -10,7 +10,7 @@ process.env['DEV_AUTH_SECRET'] ??= 'turntable-development-secret-at-least-32-cha
 process.env['OIDC_AUDIENCE'] ??= 'turntable-api';
 
 async function main(): Promise<void> {
-  const { createApiApplication, createOpenApiDocument } = await import('../src/bootstrap');
+  const { createApiApplication, createOpenApiDocument } = await import('../src/bootstrap.js');
   const outputDirectory = resolve(process.cwd(), '../../docs/api');
   const outputPath = resolve(outputDirectory, 'openapi.generated.json');
   const app = await createApiApplication({ initialize: false });

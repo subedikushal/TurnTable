@@ -1,13 +1,22 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 
 interface Operation {
   operationId?: string;
+  responses?: Record<string, ResponseObject>;
+}
+
+interface ResponseObject {
+  content?: Record<string, { schema?: unknown }>;
 }
 
 interface OpenApiDocument {
   paths?: Record<string, Record<string, Operation>>;
+  components?: {
+    schemas?: Record<string, unknown>;
+  };
 }
 
 async function main(): Promise<void> {
@@ -20,8 +29,13 @@ async function main(): Promise<void> {
     resolve(repositoryRoot, 'docs/api/openapi.generated.json'),
     'utf8',
   );
+  const addendumText = await readFile(
+    resolve(repositoryRoot, 'docs/api/phase0-contract-addendum.yaml'),
+    'utf8',
+  );
   const baseline = parse(baselineText) as OpenApiDocument;
   const generated = JSON.parse(generatedText) as OpenApiDocument;
+  const addendum = parse(addendumText) as OpenApiDocument;
   const failures: string[] = [];
 
   for (const [path, pathItem] of Object.entries(generated.paths ?? {})) {
@@ -41,10 +55,26 @@ async function main(): Promise<void> {
     }
   }
 
+  const generatedMeSchema =
+    generated.paths?.['/v1/me']?.get?.responses?.['200']?.content?.['application/json']?.schema;
+  const addendumMeSchema =
+    addendum.paths?.['/me']?.get?.responses?.['200']?.content?.['application/json']?.schema;
+  if (!generatedMeSchema || !isDeepStrictEqual(generatedMeSchema, addendumMeSchema)) {
+    failures.push('GET /v1/me 200 response does not match the Phase 0 contract addendum');
+  }
+
+  for (const schemaName of ['UserDto', 'MembershipSummaryDto', 'MeResponseDto']) {
+    const generatedSchema = generated.components?.schemas?.[schemaName];
+    const addendumSchema = addendum.components?.schemas?.[schemaName];
+    if (!generatedSchema || !isDeepStrictEqual(generatedSchema, addendumSchema)) {
+      failures.push(`${schemaName} does not match the Phase 0 contract addendum`);
+    }
+  }
+
   if (failures.length > 0)
     throw new Error(`OpenAPI baseline compatibility failed:\n${failures.join('\n')}`);
   process.stdout.write(
-    'Implemented OpenAPI operations are compatible with the normative baseline.\n',
+    'Implemented operations match the normative baseline and Phase 0 contract addendum.\n',
   );
 }
 

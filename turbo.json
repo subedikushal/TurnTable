@@ -8,8 +8,27 @@
       "outputs": ["dist/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": [
+        "APP_ENV",
+        "LOG_LEVEL",
+        "PORT",
+        "DATABASE_URL",
+        "REDIS_URL",
+        "AUTH_MODE",
+        "OIDC_ISSUER_URL",
+        "OIDC_AUDIENCE",
+        "DEV_AUTH_SECRET",
+        "CORS_ORIGINS",
+        "OTEL_SERVICE_NAME",
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "BUILD_VERSION",
+        "BUILD_COMMIT",
+        "WORKER_CONCURRENCY",
+        "WORKER_PROBE_ON_START"
+      ]
     },
     "lint": {
       "dependsOn": ["^build"]

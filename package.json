@@ -11,7 +11,7 @@
   "packageManager": "pnpm@11.16.0",
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
+    "dev": "node --env-file=.env node_modules/turbo/bin/turbo run dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",

@@ -22,7 +22,7 @@ describe('Phase 0 API', () => {
       BUILD_COMMIT: 'test-commit',
     });
 
-    const { AppModule } = await import('../src/app.module');
+    const { AppModule } = await import('../src/app.module.js');
     const verifier: OidcTokenVerifier = {
       verify: async () => ({
         subject: 'oidc|api-test',

@@ -55,7 +55,7 @@ describe('Phase 0 API with real PostgreSQL and Redis', () => {
       DEV_AUTH_SECRET: 'turntable-development-secret-at-least-32-characters',
       OIDC_AUDIENCE: 'turntable-api',
     });
-    const { AppModule } = await import('../src/app.module');
+    const { AppModule } = await import('../src/app.module.js');
     const verifier: OidcTokenVerifier = {
       verify: async () => ({
         subject: 'oidc|integration-user',
