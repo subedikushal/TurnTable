@@ -1,0 +1,21 @@
+# Specification discrepancies identified during Phase 0
+
+The read-only handoff files were not changed. The Coding Handoff Guide precedence rules were applied as follows.
+
+## `GET /v1/me` response schema is absent from OpenAPI
+
+The API prose says `GET /v1/me` returns “Profile + memberships,” but `04a_TurnTable_OpenAPI_3.1.yaml` has a 200 response with no content/schema. Phase 0 defines the smallest explicit `MeResponse` compatible with that prose: `{ user, memberships }`, using the baseline `User` fields and membership identifiers/role/status. This appears only in the generated implemented contract. The normative baseline should be corrected before broader client work treats this shape as frozen.
+
+## Overdue persistence
+
+The Prisma baseline includes `OVERDUE` in `OccurrenceStatus`. Business rules, the Data Model narrative, OpenAPI, acceptance criteria, and Analytics Specification all define overdue as derived (`SCHEDULED && due_at < now`) and explicitly say no stored transition is required. The implementation schema omits `OVERDUE` and preserves derived semantics.
+
+## Prisma nullability/version omissions
+
+The Prisma baseline makes `TaskOccurrence.dueAt` and `SwapRequest.expiresAt` nullable, while the normative Data Model and API schemas require both. The implementation makes both non-null. The Data Model also requires a concurrency `version` on `household_memberships`, which the baseline omits; the implementation adds it.
+
+## Expense category constraint
+
+The Prisma baseline stores `Expense.category` as a free string, while Business Rules define a fixed MVP category set and the Data Model requires constrained category values. The implementation uses a PostgreSQL enum generated from that fixed set.
+
+These choices tighten the machine-readable implementation toward higher-precedence business/persistence/API semantics without changing the reference package.

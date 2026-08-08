@@ -1,0 +1,1313 @@
+openapi: 3.1.0
+info:
+  title: TurnTable API
+  version: 1.0.0
+  description: Normative MVP contract baseline dated 2026-08-08. See API Contract
+    document for business semantics.
+servers:
+- url: https://api.example.com/v1
+  description: Placeholder; replace per environment
+security:
+- oidcBearer: []
+paths:
+  /me:
+    get:
+      tags:
+      - Me
+      operationId: getMe
+      responses:
+        '200':
+          description: Success
+      parameters: []
+    patch:
+      tags:
+      - Me
+      operationId: updateMe
+      responses:
+        '200':
+          description: Success
+      parameters: []
+  /households:
+    get:
+      tags:
+      - Households
+      operationId: listHouseholds
+      responses:
+        '200':
+          description: Success
+      parameters: []
+    post:
+      tags:
+      - Households
+      operationId: createHousehold
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHouseholdRequest'
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}:
+    get:
+      tags:
+      - Households
+      operationId: getHousehold
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+      - Households
+      operationId: updateHousehold
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/members:
+    get:
+      tags:
+      - Households
+      operationId: listMembers
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/invitations:
+    post:
+      tags:
+      - Households
+      operationId: createInvitation
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /invitations/{token}/accept:
+    post:
+      tags:
+      - Households
+      operationId: acceptInvitation
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/tasks:
+    get:
+      tags:
+      - Tasks
+      operationId: listTasks
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+      - Tasks
+      operationId: createTask
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /tasks/{taskId}:
+    get:
+      tags:
+      - Tasks
+      operationId: getTask
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+      - Tasks
+      operationId: updateTask
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags:
+      - Tasks
+      operationId: archiveTask
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/task-occurrences:
+    get:
+      tags:
+      - Tasks
+      operationId: listTaskOccurrences
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /task-occurrences/{occurrenceId}/complete:
+    post:
+      tags:
+      - Tasks
+      operationId: completeOccurrence
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOccurrence'
+      parameters:
+      - name: occurrenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /task-occurrences/{occurrenceId}/reopen:
+    post:
+      tags:
+      - Tasks
+      operationId: reopenOccurrence
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOccurrence'
+      parameters:
+      - name: occurrenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /task-occurrences/{occurrenceId}/skip:
+    post:
+      tags:
+      - Tasks
+      operationId: skipOccurrence
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOccurrence'
+      parameters:
+      - name: occurrenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/away-periods:
+    get:
+      tags:
+      - Tasks
+      operationId: listAwayPeriods
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+      - Tasks
+      operationId: createAwayPeriod
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /away-periods/{awayPeriodId}:
+    delete:
+      tags:
+      - Tasks
+      operationId: deleteAwayPeriod
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: awayPeriodId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /task-occurrences/{occurrenceId}/swap-requests:
+    post:
+      tags:
+      - Swaps
+      operationId: createSwapRequest
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRequest'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSwapRequest'
+      parameters:
+      - name: occurrenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/swap-requests:
+    get:
+      tags:
+      - Swaps
+      operationId: listSwapRequests
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /swap-requests/{swapRequestId}/accept:
+    post:
+      tags:
+      - Swaps
+      operationId: acceptSwapRequest
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRequest'
+      parameters:
+      - name: swapRequestId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /swap-requests/{swapRequestId}/decline:
+    post:
+      tags:
+      - Swaps
+      operationId: declineSwapRequest
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRequest'
+      parameters:
+      - name: swapRequestId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /swap-requests/{swapRequestId}/cancel:
+    post:
+      tags:
+      - Swaps
+      operationId: cancelSwapRequest
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRequest'
+      parameters:
+      - name: swapRequestId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/expenses:
+    get:
+      tags:
+      - Expenses
+      operationId: listExpenses
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+      - Expenses
+      operationId: createExpense
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseRequest'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /expenses/{expenseId}:
+    get:
+      tags:
+      - Expenses
+      operationId: getExpense
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+      parameters:
+      - name: expenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+      - Expenses
+      operationId: updateExpense
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseRequest'
+      parameters:
+      - name: expenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+    delete:
+      tags:
+      - Expenses
+      operationId: voidExpense
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: expenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/balances:
+    get:
+      tags:
+      - Settlements
+      operationId: getBalances
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/settlement-suggestions:
+    get:
+      tags:
+      - Settlements
+      operationId: getSettlementSuggestions
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/settlements:
+    get:
+      tags:
+      - Settlements
+      operationId: listSettlements
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+      - Settlements
+      operationId: createSettlement
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settlement'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSettlementRequest'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /settlements/{settlementId}/void:
+    post:
+      tags:
+      - Settlements
+      operationId: voidSettlement
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settlement'
+      parameters:
+      - name: settlementId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
+  /households/{householdId}/analytics/overview:
+    get:
+      tags:
+      - Analytics
+      operationId: getAnalyticsOverview
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsOverview'
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/analytics/expenses:
+    get:
+      tags:
+      - Analytics
+      operationId: getExpenseAnalytics
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/analytics/responsibilities:
+    get:
+      tags:
+      - Analytics
+      operationId: getResponsibilityAnalytics
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/activity:
+    get:
+      tags:
+      - Activity
+      operationId: listActivity
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+  /households/{householdId}/notification-preferences:
+    get:
+      tags:
+      - Me
+      operationId: getNotificationPreferences
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags:
+      - Me
+      operationId: updateNotificationPreferences
+      responses:
+        '200':
+          description: Success
+      parameters:
+      - name: householdId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+components:
+  securitySchemes:
+    oidcBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+  schemas:
+    Problem:
+      type: object
+      required:
+      - title
+      - status
+      - code
+      - trace_id
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+        detail:
+          type: string
+        trace_id:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    User:
+      type: object
+      required:
+      - id
+      - display_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+    Household:
+      type: object
+      required:
+      - id
+      - name
+      - timezone
+      - currency
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        version:
+          type: integer
+          minimum: 1
+    Member:
+      type: object
+      required:
+      - id
+      - household_id
+      - user
+      - role
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        user:
+          $ref: '#/components/schemas/User'
+        role:
+          type: string
+          enum:
+          - OWNER
+          - MEMBER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - LEFT
+          - REMOVED
+    Task:
+      type: object
+      required:
+      - id
+      - household_id
+      - title
+      - status
+      - start_local_date
+      - timezone
+      - due_mode
+      - assignment_strategy
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        title: &id001
+          type: string
+        description: &id002
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - ARCHIVED
+        recurrence_rule: &id003
+          type:
+          - string
+          - 'null'
+        start_local_date: &id004
+          type: string
+          format: date
+        timezone: &id005
+          type: string
+        due_mode: &id006
+          type: string
+          enum:
+          - ALL_DAY
+          - TIME
+        due_local_time: &id007
+          type:
+          - string
+          - 'null'
+        assignment_strategy: &id008
+          type: string
+          enum:
+          - ROUND_ROBIN
+          - FIXED
+        fixed_assignee_member_id: &id009
+          type:
+          - string
+          - 'null'
+          format: uuid
+        rotation_member_ids: &id010
+          type: array
+          items:
+            type: string
+            format: uuid
+        reminder_offsets_minutes: &id011
+          type: array
+          maxItems: 3
+          items:
+            type: integer
+            minimum: 0
+        version:
+          type: integer
+    TaskOccurrence:
+      type: object
+      required:
+      - id
+      - task_id
+      - household_id
+      - local_date
+      - due_at
+      - status
+      - is_overdue
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        local_date:
+          type: string
+          format: date
+        due_at:
+          type: string
+          format: date-time
+        nominal_assignee_member_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        current_assignee_member_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        status:
+          type: string
+          enum:
+          - SCHEDULED
+          - COMPLETED
+          - SKIPPED
+          - CANCELED
+        is_overdue:
+          type: boolean
+        completed_by_member_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        completed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        version:
+          type: integer
+    SwapRequest:
+      type: object
+      required:
+      - id
+      - type
+      - source_occurrence_id
+      - target_member_id
+      - status
+      - expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - SWAP
+          - COVER
+        source_occurrence_id:
+          type: string
+          format: uuid
+        target_occurrence_id:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        target_member_id:
+          type: string
+          format: uuid
+        requested_by_member_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - DECLINED
+          - CANCELED
+          - EXPIRED
+        expires_at:
+          type: string
+          format: date-time
+    Expense:
+      type: object
+      required:
+      - id
+      - household_id
+      - description
+      - amount_minor
+      - currency
+      - payer_member_id
+      - category
+      - occurred_at
+      - split_mode
+      - splits
+      - status
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        amount_minor:
+          type: integer
+        currency:
+          type: string
+        payer_member_id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        occurred_at:
+          type: string
+          format: date-time
+        split_mode:
+          type: string
+          enum:
+          - EQUAL
+          - EXACT
+          - PERCENTAGE
+          - SHARES
+        splits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpenseSplitResolved'
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - VOIDED
+        version:
+          type: integer
+    ExpenseCategory:
+      type: string
+      enum:
+      - RENT
+      - UTILITIES
+      - INTERNET
+      - GROCERIES
+      - HOUSEHOLD_SUPPLIES
+      - DINING_SHARED
+      - TRANSPORT_SHARED
+      - OTHER
+    ExpenseSplitResolved:
+      type: object
+      required:
+      - member_id
+      - amount_minor
+      properties:
+        member_id:
+          type: string
+          format: uuid
+        amount_minor:
+          type: integer
+          minimum: 0
+    Settlement:
+      type: object
+      required:
+      - id
+      - household_id
+      - payer_member_id
+      - receiver_member_id
+      - amount_minor
+      - currency
+      - settled_at
+      - status
+      - version
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        payer_member_id:
+          type: string
+          format: uuid
+        receiver_member_id:
+          type: string
+          format: uuid
+        amount_minor:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+        settled_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - VOIDED
+        version:
+          type: integer
+    AnalyticsOverview:
+      type: object
+      required:
+      - from
+      - to
+      - currency
+      - kpis
+      - insights
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+        kpis:
+          type: object
+          additionalProperties: true
+        expense_trend:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        expense_categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        member_financials:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        responsibility_mix:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        completion_status:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        swap_trend:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        balance_score: {}
+        insights:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    CreateHouseholdRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - timezone
+      - currency
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        timezone:
+          type: string
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+    CreateTaskRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - title
+      - start_local_date
+      - timezone
+      - due_mode
+      - assignment_strategy
+      properties:
+        title: *id001
+        description: *id002
+        recurrence_rule: *id003
+        start_local_date: *id004
+        timezone: *id005
+        due_mode: *id006
+        due_local_time: *id007
+        assignment_strategy: *id008
+        fixed_assignee_member_id: *id009
+        rotation_member_ids: *id010
+        reminder_offsets_minutes: *id011
+    CreateSwapRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - type
+      - target_member_id
+      properties:
+        type:
+          type: string
+          enum:
+          - SWAP
+          - COVER
+        target_member_id:
+          type: string
+          format: uuid
+        target_occurrence_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          maxLength: 300
+    CreateExpenseRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - description
+      - amount_minor
+      - currency
+      - payer_member_id
+      - category
+      - occurred_at
+      - split
+      properties:
+        description:
+          type: string
+          maxLength: 200
+        amount_minor:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+        payer_member_id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        occurred_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 1000
+        split:
+          type: object
+          description: 'Discriminated split input: EQUAL member_ids or EXACT/PERCENTAGE/SHARES
+            allocations; server resolves exact minor-unit splits.'
+    CreateSettlementRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - payer_member_id
+      - receiver_member_id
+      - amount_minor
+      - currency
+      - settled_at
+      properties:
+        payer_member_id:
+          type: string
+          format: uuid
+        receiver_member_id:
+          type: string
+          format: uuid
+        amount_minor:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+        settled_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 500

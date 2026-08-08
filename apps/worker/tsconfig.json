@@ -1,0 +1,6 @@
+{
+  "extends": "../../packages/tsconfig/nest.json",
+  "compilerOptions": { "types": ["node", "vitest/globals"] },
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}

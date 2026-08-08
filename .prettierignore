@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.turbo
+pnpm-lock.yaml
+TurnTable_Coding_Handoff_Package
+apps/api/src/generated/prisma
+packages/api-client/src/generated
+docs/api/openapi.generated.json

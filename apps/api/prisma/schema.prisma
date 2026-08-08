@@ -1,0 +1,480 @@
+// Implementation copy derived from 03a_TurnTable_Prisma_Schema_Baseline.prisma.
+// The handoff originals remain read-only. SQL-only constraints live in the reviewed migration.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  DELETED
+  PSEUDONYMIZED
+}
+enum MembershipRole {
+  OWNER
+  MEMBER
+}
+enum MembershipStatus {
+  ACTIVE
+  LEFT
+  REMOVED
+}
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+enum TaskStatus {
+  ACTIVE
+  ARCHIVED
+}
+enum DueMode {
+  ALL_DAY
+  TIME
+}
+enum AssignmentStrategy {
+  ROUND_ROBIN
+  FIXED
+}
+enum OccurrenceStatus {
+  SCHEDULED
+  COMPLETED
+  SKIPPED
+  CANCELED
+}
+enum SwapType {
+  SWAP
+  COVER
+}
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
+  EXPIRED
+}
+enum SplitMode {
+  EQUAL
+  EXACT
+  PERCENTAGE
+  SHARES
+}
+enum FinancialStatus {
+  ACTIVE
+  VOIDED
+}
+enum ExpenseCategory {
+  RENT
+  UTILITIES
+  INTERNET
+  GROCERIES
+  HOUSEHOLD_SUPPLIES
+  DINING_SHARED
+  TRANSPORT_SHARED
+  OTHER
+}
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+enum PushPlatform {
+  IOS
+  ANDROID
+}
+
+model User {
+  id          String     @id @default(uuid()) @db.Uuid
+  oidcSubject String     @unique @map("oidc_subject")
+  email       String?
+  displayName String     @map("display_name")
+  status      UserStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  memberships          HouseholdMembership[]
+  householdsCreated    Household[]           @relation("HouseholdCreator")
+  invitationsAccepted  HouseholdInvitation[] @relation("InvitationAcceptor")
+  pushDevices           PushDevice[]
+  idempotencyRecords    IdempotencyRecord[]
+
+  @@map("users")
+}
+
+model Household {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  timezone        String
+  currency        String   @db.Char(3)
+  createdByUserId String   @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version         Int      @default(1)
+
+  createdBy       User @relation("HouseholdCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  memberships     HouseholdMembership[]
+  invitations     HouseholdInvitation[]
+  tasks           Task[]
+  taskOccurrences TaskOccurrence[]
+  awayPeriods     AwayPeriod[]
+  swapRequests    SwapRequest[]
+  expenses        Expense[]
+  settlements     Settlement[]
+  activityEvents  ActivityEvent[]
+  outboxEvents    OutboxEvent[]
+
+  @@map("households")
+}
+
+model HouseholdMembership {
+  id          String           @id @default(uuid()) @db.Uuid
+  householdId String           @map("household_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  role        MembershipRole
+  status      MembershipStatus @default(ACTIVE)
+  joinedAt    DateTime         @default(now()) @map("joined_at") @db.Timestamptz(6)
+  leftAt      DateTime?        @map("left_at") @db.Timestamptz(6)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version     Int              @default(1)
+
+  household              Household               @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  invitationsCreated     HouseholdInvitation[]   @relation("InvitationCreator")
+  tasksCreated           Task[]                  @relation("TaskCreator")
+  fixedTasks             Task[]                  @relation("FixedTaskAssignee")
+  rotationMemberships    TaskRotationMember[]
+  nominalOccurrences     TaskOccurrence[]        @relation("NominalAssignee")
+  currentOccurrences     TaskOccurrence[]        @relation("CurrentAssignee")
+  completedOccurrences   TaskOccurrence[]        @relation("OccurrenceCompleter")
+  awayPeriods            AwayPeriod[]
+  swapTargets            SwapRequest[]           @relation("SwapTargetMember")
+  swapRequesters         SwapRequest[]           @relation("SwapRequester")
+  swapDecisions          SwapRequest[]           @relation("SwapDecider")
+  expensesCreated        Expense[]               @relation("ExpenseCreator")
+  expensesPaid           Expense[]               @relation("ExpensePayer")
+  expensesVoided         Expense[]               @relation("ExpenseVoider")
+  expenseSplits          ExpenseSplit[]
+  settlementsPaid        Settlement[]            @relation("SettlementPayer")
+  settlementsReceived    Settlement[]            @relation("SettlementReceiver")
+  settlementsCreated     Settlement[]            @relation("SettlementCreator")
+  settlementsVoided      Settlement[]            @relation("SettlementVoider")
+  notificationPreference NotificationPreference?
+  activityEvents         ActivityEvent[]         @relation("ActivityActor")
+
+  @@unique([householdId, userId])
+  @@index([userId, status])
+  @@index([householdId, status, role])
+  @@map("household_memberships")
+}
+
+model HouseholdInvitation {
+  id                String           @id @default(uuid()) @db.Uuid
+  householdId       String           @map("household_id") @db.Uuid
+  createdByMemberId String           @map("created_by_member_id") @db.Uuid
+  tokenHash         String           @unique @map("token_hash")
+  invitedEmail      String?          @map("invited_email")
+  status            InvitationStatus @default(PENDING)
+  expiresAt         DateTime         @map("expires_at") @db.Timestamptz(6)
+  acceptedByUserId  String?          @map("accepted_by_user_id") @db.Uuid
+  acceptedAt        DateTime?        @map("accepted_at") @db.Timestamptz(6)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  household      Household           @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  createdBy      HouseholdMembership @relation("InvitationCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  acceptedByUser User?               @relation("InvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([householdId, status, expiresAt])
+  @@map("household_invitations")
+}
+
+model Task {
+  id                     String             @id @default(uuid()) @db.Uuid
+  householdId            String             @map("household_id") @db.Uuid
+  createdByMemberId      String             @map("created_by_member_id") @db.Uuid
+  title                  String
+  description            String?
+  status                 TaskStatus         @default(ACTIVE)
+  recurrenceRule         String?            @map("recurrence_rule")
+  startLocalDate         DateTime           @map("start_local_date") @db.Date
+  timezone               String
+  dueMode                DueMode            @map("due_mode")
+  dueLocalTime           DateTime?          @map("due_local_time") @db.Time(0)
+  assignmentStrategy     AssignmentStrategy @map("assignment_strategy")
+  fixedAssigneeMemberId  String?            @map("fixed_assignee_member_id") @db.Uuid
+  rotationCursorPosition Int                @default(0) @map("rotation_cursor_position")
+  weight                 Int                @default(1) @db.SmallInt
+  reminderOffsetsMinutes Int[]              @default([]) @map("reminder_offsets_minutes")
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version                Int                @default(1)
+
+  household       Household            @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  createdBy       HouseholdMembership   @relation("TaskCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  fixedAssignee   HouseholdMembership?  @relation("FixedTaskAssignee", fields: [fixedAssigneeMemberId], references: [id], onDelete: Restrict)
+  rotationMembers TaskRotationMember[]
+  occurrences     TaskOccurrence[]
+
+  @@index([householdId, status])
+  @@map("tasks")
+}
+
+model TaskRotationMember {
+  taskId      String    @map("task_id") @db.Uuid
+  memberId    String    @map("member_id") @db.Uuid
+  position    Int
+  activeFrom  DateTime? @map("active_from") @db.Date
+  activeUntil DateTime? @map("active_until") @db.Date
+
+  task   Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  member HouseholdMembership @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([taskId, memberId])
+  @@unique([taskId, position])
+  @@index([memberId])
+  @@map("task_rotation_members")
+}
+
+model TaskOccurrence {
+  id                      String           @id @default(uuid()) @db.Uuid
+  taskId                  String           @map("task_id") @db.Uuid
+  householdId             String           @map("household_id") @db.Uuid
+  localDate               DateTime         @map("local_date") @db.Date
+  dueAt                   DateTime         @map("due_at") @db.Timestamptz(6)
+  nominalAssigneeMemberId String?          @map("nominal_assignee_member_id") @db.Uuid
+  currentAssigneeMemberId String?          @map("current_assignee_member_id") @db.Uuid
+  status                  OccurrenceStatus @default(SCHEDULED)
+  completedByMemberId     String?          @map("completed_by_member_id") @db.Uuid
+  completedAt             DateTime?        @map("completed_at") @db.Timestamptz(6)
+  skipReason              String?          @map("skip_reason")
+  isUserModified          Boolean          @default(false) @map("is_user_modified")
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version                 Int              @default(1)
+
+  task               Task                  @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  household          Household             @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  nominalAssignee    HouseholdMembership?  @relation("NominalAssignee", fields: [nominalAssigneeMemberId], references: [id], onDelete: Restrict)
+  currentAssignee    HouseholdMembership?  @relation("CurrentAssignee", fields: [currentAssigneeMemberId], references: [id], onDelete: Restrict)
+  completedBy        HouseholdMembership?  @relation("OccurrenceCompleter", fields: [completedByMemberId], references: [id], onDelete: Restrict)
+  sourceSwapRequests SwapRequest[]         @relation("SwapSourceOccurrence")
+  targetSwapRequests SwapRequest[]         @relation("SwapTargetOccurrence")
+
+  @@unique([taskId, localDate, dueAt])
+  @@index([householdId, dueAt])
+  @@index([currentAssigneeMemberId, dueAt])
+  @@index([taskId, localDate])
+  @@map("task_occurrences")
+}
+
+model AwayPeriod {
+  id          String   @id @default(uuid()) @db.Uuid
+  householdId String   @map("household_id") @db.Uuid
+  memberId    String   @map("member_id") @db.Uuid
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  reason      String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  household Household           @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  member    HouseholdMembership @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@index([householdId, startDate, endDate])
+  @@index([memberId, startDate, endDate])
+  @@map("away_periods")
+}
+
+model SwapRequest {
+  id                  String     @id @default(uuid()) @db.Uuid
+  householdId         String     @map("household_id") @db.Uuid
+  type                SwapType
+  sourceOccurrenceId  String     @map("source_occurrence_id") @db.Uuid
+  targetOccurrenceId  String?    @map("target_occurrence_id") @db.Uuid
+  targetMemberId      String     @map("target_member_id") @db.Uuid
+  requestedByMemberId String     @map("requested_by_member_id") @db.Uuid
+  status              SwapStatus @default(PENDING)
+  message             String?
+  expiresAt           DateTime   @map("expires_at") @db.Timestamptz(6)
+  decidedByMemberId   String?    @map("decided_by_member_id") @db.Uuid
+  decidedAt           DateTime?  @map("decided_at") @db.Timestamptz(6)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  version             Int        @default(1)
+
+  household       Household            @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  sourceOccurrence TaskOccurrence      @relation("SwapSourceOccurrence", fields: [sourceOccurrenceId], references: [id], onDelete: Restrict)
+  targetOccurrence TaskOccurrence?     @relation("SwapTargetOccurrence", fields: [targetOccurrenceId], references: [id], onDelete: Restrict)
+  targetMember     HouseholdMembership @relation("SwapTargetMember", fields: [targetMemberId], references: [id], onDelete: Restrict)
+  requestedBy      HouseholdMembership @relation("SwapRequester", fields: [requestedByMemberId], references: [id], onDelete: Restrict)
+  decidedBy        HouseholdMembership? @relation("SwapDecider", fields: [decidedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([householdId, status, createdAt(sort: Desc)])
+  @@index([sourceOccurrenceId])
+  @@index([targetOccurrenceId])
+  @@map("swap_requests")
+}
+
+model Expense {
+  id                String          @id @default(uuid()) @db.Uuid
+  householdId       String          @map("household_id") @db.Uuid
+  createdByMemberId String          @map("created_by_member_id") @db.Uuid
+  payerMemberId     String          @map("payer_member_id") @db.Uuid
+  description       String
+  amountMinor       BigInt          @map("amount_minor")
+  currency          String          @db.Char(3)
+  category          ExpenseCategory
+  occurredAt        DateTime        @map("occurred_at") @db.Timestamptz(6)
+  splitMode         SplitMode       @map("split_mode")
+  note              String?
+  status            FinancialStatus @default(ACTIVE)
+  voidedAt          DateTime?       @map("voided_at") @db.Timestamptz(6)
+  voidedByMemberId  String?         @map("voided_by_member_id") @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version           Int             @default(1)
+
+  household Household            @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  createdBy HouseholdMembership  @relation("ExpenseCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  payer     HouseholdMembership  @relation("ExpensePayer", fields: [payerMemberId], references: [id], onDelete: Restrict)
+  voidedBy  HouseholdMembership? @relation("ExpenseVoider", fields: [voidedByMemberId], references: [id], onDelete: Restrict)
+  splits    ExpenseSplit[]
+
+  @@index([householdId, occurredAt(sort: Desc)])
+  @@index([householdId, category, occurredAt(sort: Desc)])
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  expenseId  String   @map("expense_id") @db.Uuid
+  memberId   String   @map("member_id") @db.Uuid
+  amountMinor BigInt  @map("amount_minor")
+  inputValue Decimal? @map("input_value") @db.Decimal(20, 8)
+
+  expense Expense             @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  member  HouseholdMembership @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([expenseId, memberId])
+  @@index([memberId, expenseId])
+  @@map("expense_splits")
+}
+
+model Settlement {
+  id                String          @id @default(uuid()) @db.Uuid
+  householdId       String          @map("household_id") @db.Uuid
+  payerMemberId     String          @map("payer_member_id") @db.Uuid
+  receiverMemberId  String          @map("receiver_member_id") @db.Uuid
+  amountMinor       BigInt          @map("amount_minor")
+  currency          String          @db.Char(3)
+  settledAt         DateTime        @map("settled_at") @db.Timestamptz(6)
+  note              String?
+  createdByMemberId String          @map("created_by_member_id") @db.Uuid
+  status            FinancialStatus @default(ACTIVE)
+  voidedAt          DateTime?       @map("voided_at") @db.Timestamptz(6)
+  voidedByMemberId  String?         @map("voided_by_member_id") @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  version           Int             @default(1)
+
+  household Household            @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  payer     HouseholdMembership  @relation("SettlementPayer", fields: [payerMemberId], references: [id], onDelete: Restrict)
+  receiver  HouseholdMembership  @relation("SettlementReceiver", fields: [receiverMemberId], references: [id], onDelete: Restrict)
+  createdBy HouseholdMembership  @relation("SettlementCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  voidedBy  HouseholdMembership? @relation("SettlementVoider", fields: [voidedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([householdId, settledAt(sort: Desc)])
+  @@index([payerMemberId, receiverMemberId, settledAt(sort: Desc)])
+  @@map("settlements")
+}
+
+model NotificationPreference {
+  memberId                   String   @id @map("member_id") @db.Uuid
+  pushEnabled                Boolean  @default(true) @map("push_enabled")
+  taskRemindersEnabled       Boolean  @default(true) @map("task_reminders_enabled")
+  swapEventsEnabled          Boolean  @default(true) @map("swap_events_enabled")
+  expenseEventsEnabled       Boolean  @default(true) @map("expense_events_enabled")
+  settlementEventsEnabled    Boolean  @default(true) @map("settlement_events_enabled")
+  quietHoursStart            DateTime? @map("quiet_hours_start") @db.Time(0)
+  quietHoursEnd              DateTime? @map("quiet_hours_end") @db.Time(0)
+  updatedAt                  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  member HouseholdMembership @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model PushDevice {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String       @map("user_id") @db.Uuid
+  provider   String
+  platform   PushPlatform
+  token      String       @unique
+  active     Boolean      @default(true)
+  lastSeenAt DateTime     @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+  @@map("push_devices")
+}
+
+model ActivityEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  householdId   String   @map("household_id") @db.Uuid
+  actorMemberId String?  @map("actor_member_id") @db.Uuid
+  eventType     String   @map("event_type")
+  entityType    String   @map("entity_type")
+  entityId      String?  @map("entity_id") @db.Uuid
+  metadata      Json     @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  household Household            @relation(fields: [householdId], references: [id], onDelete: Restrict)
+  actor     HouseholdMembership? @relation("ActivityActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
+
+  @@index([householdId, createdAt(sort: Desc)])
+  @@map("activity_events")
+}
+
+model OutboxEvent {
+  id            String       @id @default(uuid()) @db.Uuid
+  householdId   String?      @map("household_id") @db.Uuid
+  eventType     String       @map("event_type")
+  aggregateType String       @map("aggregate_type")
+  aggregateId   String       @map("aggregate_id") @db.Uuid
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  attemptCount  Int          @default(0) @map("attempt_count")
+  availableAt   DateTime     @default(now()) @map("available_at") @db.Timestamptz(6)
+  processedAt   DateTime?    @map("processed_at") @db.Timestamptz(6)
+  lastErrorCode String?      @map("last_error_code")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  household Household? @relation(fields: [householdId], references: [id], onDelete: Restrict)
+
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_events")
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorUserId    String   @map("actor_user_id") @db.Uuid
+  operationScope String   @map("operation_scope")
+  idempotencyKey String   @map("idempotency_key")
+  requestHash    String   @map("request_hash")
+  responseStatus Int      @map("response_status")
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@unique([actorUserId, operationScope, idempotencyKey])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
