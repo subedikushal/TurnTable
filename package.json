@@ -23,6 +23,8 @@
     "db:migrate:dev": "prisma migrate dev --config apps/api/prisma.config.ts",
     "db:reset": "prisma migrate reset --config apps/api/prisma.config.ts",
     "db:seed": "tsx apps/api/prisma/seed.ts",
+    "auth:oidc:check": "node --env-file=.env --import tsx apps/api/scripts/verify-oidc.ts --discovery-only",
+    "auth:oidc:verify": "node --env-file=.env --import tsx apps/api/scripts/verify-oidc.ts",
     "openapi:generate": "pnpm --filter @turntable/api openapi:generate && pnpm --filter @turntable/api-client generate",
     "openapi:check": "pnpm openapi:generate && pnpm --filter @turntable/api openapi:compat && git diff --exit-code -- docs/api/openapi.generated.json packages/api-client/src/generated/schema.d.ts",
     "postinstall": "pnpm db:generate"

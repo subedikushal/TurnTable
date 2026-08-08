@@ -23,7 +23,6 @@ PostgreSQL is authoritative business storage. Redis is transient queue/cache inf
 - Corepack and pnpm 11
 - Docker Engine or Docker Desktop
 - Git
-- A standards-compliant OIDC application for non-local environments
 
 ## Setup
 
@@ -31,32 +30,44 @@ PostgreSQL is authoritative business storage. Redis is transient queue/cache inf
 corepack enable
 pnpm install
 cp .env.example .env
-docker compose up -d
+docker compose up -d --wait
 pnpm db:migrate
 pnpm db:seed # optional deterministic Phase 1 local fixtures
 pnpm dev
 ```
 
-The API listens on `http://localhost:3000`. Swagger UI is at `http://localhost:3000/docs`, and the runtime OpenAPI JSON is at `http://localhost:3000/docs/openapi.json`.
+The API listens on `http://localhost:3000`. Swagger UI is at `http://localhost:3000/docs`, the runtime OpenAPI JSON is at `http://localhost:3000/docs/openapi.json`, and the local Keycloak admin console is at `http://localhost:8080/admin/`.
 
 ## Environment configuration
 
 Required application settings are documented in `.env.example`. Startup fails with a targeted configuration error when required values are absent.
 
-If ports 5432 or 6379 are already occupied, change `POSTGRES_PORT`/`REDIS_PORT` and update the corresponding `DATABASE_URL`/`REDIS_URL` values before starting Compose.
+If ports 5432, 6379, or 8080 are already occupied, change `POSTGRES_PORT`, `REDIS_PORT`, or `KEYCLOAK_PORT` and update dependent URLs before starting Compose.
 
-Production/staging use `AUTH_MODE=oidc`, `OIDC_ISSUER_URL`, and `OIDC_AUDIENCE`. No custom username/password authentication exists. Local/test may use `AUTH_MODE=development` with an HS256 secret of at least 32 characters; the API rejects this mode outside `APP_ENV=local|test`. `INVITATION_TOKEN_SECRET` is a distinct 32+ character deployment secret used to derive opaque, retry-stable invitation tokens; keep it stable and never expose it to clients.
+Self-hosted Keycloak is the reference identity provider. Local Compose imports the `turntable` realm and `.env.example` points the API at `http://localhost:8080/realms/turntable`. Production/staging use the public HTTPS Keycloak issuer and an environment-specific audience. TurnTable has no custom username/password implementation and imports no Keycloak SDK into business modules; it validates standard OIDC/JWT discovery, JWKS, issuer, audience, expiration, and subject claims.
 
-Generate a local bearer token after loading `.env`:
+Local/test may explicitly fall back to `AUTH_MODE=development` with an HS256 secret of at least 32 characters; the API rejects this mode outside `APP_ENV=local|test`. `INVITATION_TOKEN_SECRET` is a distinct 32+ character deployment secret used to derive opaque, retry-stable invitation tokens; keep it stable and never expose it to clients.
+
+Verify local Keycloak discovery and signing keys:
 
 ```bash
-set -a && source .env && set +a
-pnpm --filter @turntable/api auth:dev-token
+pnpm auth:oidc:check
 ```
 
-Use the output as `Authorization: Bearer <token>` with `GET /v1/me`. The first authenticated request creates the local `User` projection keyed by the external subject.
+For a real user flow, start the API, run `pnpm auth:oidc:verify`, and open the printed login URL. The command completes Authorization Code with PKCE, validates the token, and calls `GET /v1/me` without printing or persisting the raw bearer token. The first authenticated request creates the local `User` projection keyed by the external subject.
 
-For multi-user household testing, set `DEV_TOKEN_SUBJECT`, `DEV_TOKEN_EMAIL`, and `DEV_TOKEN_NAME` before running the same token command. These options affect only the local token generator.
+For offline/test-only synthetic authentication, switch `AUTH_MODE=development`, load `.env`, and use `pnpm --filter @turntable/api auth:dev-token`. Multi-user testing may set `DEV_TOKEN_SUBJECT`, `DEV_TOKEN_EMAIL`, and `DEV_TOKEN_NAME`; these options affect only that local generator.
+
+## Self-hosted Keycloak
+
+Local Compose adds pinned Keycloak 26.7.0 plus an isolated PostgreSQL 18 service. The committed realm contains no users and defines:
+
+- confidential `turntable-web` with Authorization Code and PKCE S256;
+- public `turntable-mobile` with Authorization Code and PKCE S256;
+- bearer-only `turntable-api` with login and service-account flows disabled;
+- the local API audience `urn:turntable:api:local` on user access tokens.
+
+Local Keycloak uses `start-dev`; it is not a production deployment template. See `docs/runbooks/keycloak.md` for HTTPS, database, SMTP, backup, monitoring, scaling, and realm-change requirements. The provider decision and original-plan delta are recorded in ADR-008 and `docs/architecture/keycloak-plan-delta.md`; local verification evidence is in `docs/runbooks/keycloak-verification.md`.
 
 ## Database commands
 
@@ -154,14 +165,16 @@ docker build -f apps/api/Dockerfile -t turntable-api:local .
 docker build -f apps/worker/Dockerfile -t turntable-worker:local .
 ```
 
-Both images use Node.js 24, multi-stage builds, explicit commands, and a non-root runtime user. PostgreSQL and Redis are external services and are never embedded in these images.
+Both images use Node.js 24, multi-stage builds, explicit commands, and a non-root runtime user. PostgreSQL, Redis, and Keycloak are external services and are never embedded in these images.
 
 ## Troubleshooting
 
 - `Invalid TurnTable configuration`: compare `.env` with `.env.example`; all required values must be present.
 - `/health/ready` returns 503: confirm `docker compose ps`, then run `pnpm db:migrate`.
 - Integration tests cannot find Docker: start Docker Desktop/Engine and rerun `pnpm test:integration`.
-- `/v1/me` returns 401 locally: use development auth only with `APP_ENV=local`, a 32+ character `DEV_AUTH_SECRET`, and a newly generated token.
+- `/v1/me` returns 401 locally: run `pnpm auth:oidc:check`, then use `pnpm auth:oidc:verify` to obtain and validate a real Keycloak user token.
+- Keycloak discovery fails: run `docker compose ps`; the configured issuer must exactly equal the discovery document's issuer.
+- Keycloak realm changes do not appear: startup import intentionally skips an existing realm; follow `docs/runbooks/keycloak.md` rather than deleting application data casually.
 - Prisma client import/build errors: run `pnpm db:generate`.
 - Stale generated contract: run `pnpm openapi:generate` and commit both generated artifacts.
 

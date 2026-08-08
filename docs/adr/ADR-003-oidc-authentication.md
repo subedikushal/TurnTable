@@ -1,12 +1,16 @@
 # ADR-003: OIDC authentication architecture
 
+## Status
+
+Accepted; the reference deployment provider was amended by ADR-008.
+
 ## Context
 
 TurnTable needs standards-based authentication across mobile, web, and API without owning passwords or provider-specific business logic.
 
 ## Decision
 
-Validate managed-provider OIDC bearer tokens at an adapter boundary and map the stable external subject to a local `User`. Use Authorization Code + PKCE in clients. Permit an isolated signed-token verifier only in local/test environments.
+Validate standards-compliant OIDC bearer tokens at an adapter boundary and map the stable external subject to a local `User`. Use Authorization Code + PKCE in clients. Permit an isolated signed-token verifier only in local/test environments.
 
 ## Consequences
 
