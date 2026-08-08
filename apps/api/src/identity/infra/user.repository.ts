@@ -19,6 +19,7 @@ export class UserRepository {
       update: principal.email ? { email: principal.email } : {},
       include: {
         memberships: {
+          where: { status: 'ACTIVE' },
           orderBy: { joinedAt: 'asc' },
           select: { id: true, householdId: true, role: true, status: true },
         },

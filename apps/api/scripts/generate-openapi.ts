@@ -7,6 +7,7 @@ process.env['DATABASE_URL'] ??= 'postgresql://turntable:turntable@localhost:5432
 process.env['REDIS_URL'] ??= 'redis://localhost:6379';
 process.env['AUTH_MODE'] ??= 'development';
 process.env['DEV_AUTH_SECRET'] ??= 'turntable-development-secret-at-least-32-characters';
+process.env['INVITATION_TOKEN_SECRET'] ??= 'turntable-invitation-secret-at-least-32-characters';
 process.env['OIDC_AUDIENCE'] ??= 'turntable-api';
 
 async function main(): Promise<void> {

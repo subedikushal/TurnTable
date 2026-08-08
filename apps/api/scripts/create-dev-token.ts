@@ -6,15 +6,18 @@ async function main(): Promise<void> {
     throw new Error('DEV_AUTH_SECRET must contain at least 32 characters');
   }
   const audience = process.env['OIDC_AUDIENCE'] ?? 'turntable-api';
+  const subject = process.env['DEV_TOKEN_SUBJECT'] ?? 'development|turntable-engineer';
+  const email = process.env['DEV_TOKEN_EMAIL'] ?? 'developer@turntable.local';
+  const displayName = process.env['DEV_TOKEN_NAME'] ?? 'TurnTable Developer';
   const token = await new SignJWT({
-    email: 'developer@turntable.local',
-    name: 'TurnTable Developer',
+    email,
+    name: displayName,
     scope: 'openid profile email',
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuer('turntable-development')
     .setAudience(audience)
-    .setSubject('development|turntable-engineer')
+    .setSubject(subject)
     .setIssuedAt()
     .setExpirationTime('8h')
     .sign(new TextEncoder().encode(secret));

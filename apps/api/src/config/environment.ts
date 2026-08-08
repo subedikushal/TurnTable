@@ -11,6 +11,7 @@ const environmentSchema = z
     OIDC_ISSUER_URL: z.string().url().optional(),
     OIDC_AUDIENCE: z.string().min(1).optional(),
     DEV_AUTH_SECRET: z.string().min(32).optional(),
+    INVITATION_TOKEN_SECRET: z.string().min(32),
     CORS_ORIGINS: z.string().min(1).optional(),
     OTEL_SERVICE_NAME: z.string().default('turntable-api'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional().or(z.literal('')),

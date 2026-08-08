@@ -53,6 +53,7 @@ describe('Phase 0 API with real PostgreSQL and Redis', () => {
       REDIS_URL: `redis://${redis.getHost()}:${redis.getMappedPort(6379)}`,
       AUTH_MODE: 'development',
       DEV_AUTH_SECRET: 'turntable-development-secret-at-least-32-characters',
+      INVITATION_TOKEN_SECRET: 'turntable-invitation-secret-at-least-32-characters',
       OIDC_AUDIENCE: 'turntable-api',
     });
     const { AppModule } = await import('../src/app.module.js');

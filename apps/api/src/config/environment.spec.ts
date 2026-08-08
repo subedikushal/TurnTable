@@ -5,6 +5,7 @@ const base = {
   APP_ENV: 'test',
   DATABASE_URL: 'postgresql://turntable:turntable@localhost:5432/turntable',
   REDIS_URL: 'redis://localhost:6379',
+  INVITATION_TOKEN_SECRET: 'turntable-invitation-secret-at-least-32-characters',
 };
 
 describe('API configuration', () => {

@@ -21,6 +21,7 @@
         "OIDC_ISSUER_URL",
         "OIDC_AUDIENCE",
         "DEV_AUTH_SECRET",
+        "INVITATION_TOKEN_SECRET",
         "CORS_ORIGINS",
         "OTEL_SERVICE_NAME",
         "OTEL_EXPORTER_OTLP_ENDPOINT",

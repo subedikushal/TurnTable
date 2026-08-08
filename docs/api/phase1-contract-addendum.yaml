@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: TurnTable Phase 1 contract correction
+  version: 1.0.0
+  description: >-
+    Project-owned correction for the ownership-transfer and member-removal
+    operations required by the normative API prose and acceptance criteria but
+    omitted from the read-only handoff OpenAPI baseline.
+security:
+  - oidcBearer: []
+paths:
+  /households/{householdId}/ownership-transfer:
+    post:
+      tags:
+        - Households
+      operationId: transferOwnership
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/HouseholdId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferOwnershipRequestDto'
+      responses:
+        '200':
+          description: Atomic old-owner/new-owner membership projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipTransferResponseDto'
+  /households/{householdId}/members/{memberId}:
+    delete:
+      tags:
+        - Households
+      operationId: removeMember
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/MemberId'
+        - $ref: '#/components/parameters/HouseholdId'
+      responses:
+        '200':
+          description: Historical membership transitioned to REMOVED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberDto'
+components:
+  securitySchemes:
+    oidcBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+    HouseholdId:
+      name: householdId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MemberId:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    TransferOwnershipRequestDto:
+      type: object
+      properties:
+        target_member_id:
+          type: string
+          format: uuid
+      required:
+        - target_member_id
+    OwnershipTransferResponseDto:
+      type: object
+      properties:
+        household_id:
+          type: string
+          format: uuid
+        previous_owner:
+          $ref: '#/components/schemas/MemberDto'
+        new_owner:
+          $ref: '#/components/schemas/MemberDto'
+      required:
+        - household_id
+        - previous_owner
+        - new_owner
+    MemberDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        household_id:
+          type: string
+          format: uuid
+        user:
+          $ref: '#/components/schemas/UserDto'
+        role:
+          type: string
+          enum:
+            - OWNER
+            - MEMBER
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - LEFT
+            - REMOVED
+        joined_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+          minimum: 1
+      required:
+        - id
+        - household_id
+        - user
+        - role
+        - status
+        - joined_at
+        - left_at
+        - version
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+          example: Alex Rivera
+        email:
+          type: string
+          format: email
+          nullable: true
+      required:
+        - id
+        - display_name

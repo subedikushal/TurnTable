@@ -17,6 +17,7 @@ describe('Phase 0 API', () => {
       REDIS_URL: 'redis://localhost:6379',
       AUTH_MODE: 'development',
       DEV_AUTH_SECRET: 'turntable-development-secret-at-least-32-characters',
+      INVITATION_TOKEN_SECRET: 'turntable-invitation-secret-at-least-32-characters',
       OIDC_AUDIENCE: 'turntable-api',
       BUILD_VERSION: 'test-build',
       BUILD_COMMIT: 'test-commit',

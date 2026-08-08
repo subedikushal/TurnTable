@@ -87,7 +87,7 @@ export async function createApiApplication(options?: {
 export function createOpenApiDocument(app: NestFastifyApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('TurnTable API')
-    .setDescription('Phase 0 implementation contract for the TurnTable API-first modular monolith')
+    .setDescription('TurnTable API-first modular monolith implementation contract')
     .setVersion('1.0.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'OIDC access token' },
