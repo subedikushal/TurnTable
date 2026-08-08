@@ -2,8 +2,9 @@
 // The handoff originals remain read-only. SQL-only constraints live in the reviewed migration.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
