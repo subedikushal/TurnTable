@@ -39,11 +39,11 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@nestjs/testing": "11.1.28",
+    "@nestjs/testing": "11.1.29",
     "@testcontainers/postgresql": "12.1.0",
     "@types/pg": "8.20.0",
     "testcontainers": "12.1.0",
-    "tsx": "4.23.11",
+    "tsx": "4.23.12",
     "vitest": "4.1.10",
     "yaml": "2.9.0"
   }
