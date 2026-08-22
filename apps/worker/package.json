@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "testcontainers": "12.1.0",
-    "tsx": "4.23.11",
-    "vitest": "4.1.10"
+    "tsx": "4.23.12",
+    "vitest": "4.1.11"
   }
 }
