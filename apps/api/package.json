@@ -22,7 +22,7 @@
     "@nestjs/core": "11.1.28",
     "@nestjs/platform-fastify": "11.1.28",
     "@nestjs/swagger": "11.4.6",
-    "@fastify/static": "9.3.0",
+    "@fastify/static": "10.1.2",
     "@prisma/adapter-pg": "7.9.1",
     "@prisma/client": "7.9.1",
     "@turntable/contracts": "workspace:*",
